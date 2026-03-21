@@ -7,6 +7,7 @@ A Django REST API for managing user-owned IoT devices.
 - JWT authentication with `djangorestframework-simplejwt`
 - Per-user device listing, creation, update, and deletion
 - Device status filtering
+- RAG proof of concept using Chroma plus Gemini over indexed device data
 
 ## Project Structure
 
@@ -28,6 +29,8 @@ A Django REST API for managing user-owned IoT devices.
 - Django
 - Django REST Framework
 - `djangorestframework-simplejwt`
+- `chromadb`
+- `google-genai`
 
 ## Setup
 
@@ -46,10 +49,17 @@ source .env
 set +a
 ```
 
+Install dependencies:
+
+```bash
+pip install -r requirements.txt
+```
+
 ## Running Django
 
 ```bash
 python manage.py migrate
+python manage.py rebuild_device_rag
 python manage.py runserver
 ```
 
@@ -70,6 +80,41 @@ Use the returned access token:
 ```bash
 curl http://127.0.0.1:8000/devices/ \
   -H "Authorization: Bearer <access-token>"
+```
+
+## RAG PoC
+
+The PoC indexes each user's device records and recent sessions into a local Chroma collection, then uses Gemini for retrieval embeddings and answer generation.
+
+Index current device data:
+
+```bash
+python manage.py rebuild_device_rag
+```
+
+Ask a question:
+
+```bash
+curl -X POST http://127.0.0.1:8000/devices/rag/query/ \
+  -H "Authorization: Bearer <access-token>" \
+  -H "Content-Type: application/json" \
+  -d '{"question":"Which of my devices are offline?","limit":3}'
+```
+
+Browser playground:
+
+```bash
+http://127.0.0.1:8000/rag/
+```
+
+The playground lets you log in with your Django user, fetch a JWT token, submit a RAG question, and inspect the retrieved matches without using `curl`.
+
+Optional environment variables:
+
+```bash
+GEMINI_EMBEDDING_MODEL=gemini-embedding-001
+CHROMA_COLLECTION_NAME=device-knowledge
+CHROMA_PERSIST_DIR=.chroma
 ```
 
 ## Secret Handling

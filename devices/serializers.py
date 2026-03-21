@@ -21,3 +21,8 @@ class DeviceSerializer(serializers.ModelSerializer):
         model = Device
         fields = '__all__'
         read_only_fields = ['owner', 'created_at']
+
+
+class DeviceQuestionSerializer(serializers.Serializer):
+    question = serializers.CharField()
+    limit = serializers.IntegerField(required=False, min_value=1, max_value=10, default=3)
