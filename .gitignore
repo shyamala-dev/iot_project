@@ -8,3 +8,11 @@ __pycache__/
 *.py[cod]
 .venv
 __pycache__/
+.env
+.venv/
+.chroma/
+__pycache__/
+*.pyc
+.continue/
+.mcp-venv/
+.mcp.json
