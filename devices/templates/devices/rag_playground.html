@@ -1,0 +1,444 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IoT Device RAG Playground</title>
+    <style>
+        :root {
+            --bg: #05070b;
+            --panel: rgba(255, 251, 245, 0.92);
+            --panel-strong: #fffdf8;
+            --text: #1e1e1b;
+            --muted: #5f5a52;
+            --accent: #1f5fd6;
+            --accent-dark: #10398c;
+            --accent-soft: rgba(31, 95, 214, 0.18);
+            --border: rgba(30, 30, 27, 0.12);
+            --shadow: 0 44px 110px rgba(0, 0, 0, 0.58);
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            min-height: 100vh;
+            font-family: Georgia, "Times New Roman", serif;
+            color: var(--text);
+            background:
+                radial-gradient(circle at top left, rgba(47, 125, 246, 0.2), transparent 26%),
+                radial-gradient(circle at bottom right, rgba(75, 145, 255, 0.14), transparent 22%),
+                linear-gradient(145deg, #030508 0%, #0a0f18 58%, #05070b 100%);
+        }
+
+        .shell {
+            width: min(1100px, calc(100% - 32px));
+            margin: 32px auto;
+            padding: 24px;
+            border: 1px solid rgba(255, 255, 255, 0.62);
+            border-radius: 6px;
+            background:
+                linear-gradient(180deg, rgba(255, 254, 251, 0.98), rgba(247, 242, 235, 0.96));
+            backdrop-filter: blur(18px);
+            box-shadow:
+                0 3px 0 rgba(255, 255, 255, 0.45) inset,
+                0 0 0 1px rgba(31, 95, 214, 0.08),
+                0 18px 34px rgba(0, 0, 0, 0.18),
+                var(--shadow);
+        }
+
+        .hero {
+            display: grid;
+            gap: 12px;
+            margin-bottom: 28px;
+        }
+
+        .eyebrow {
+            margin: 0;
+            text-transform: uppercase;
+            letter-spacing: 0.18em;
+            font-size: 0.76rem;
+            color: var(--accent);
+        }
+
+        h1 {
+            margin: 0;
+            font-size: clamp(1.9rem, 3.6vw, 3.2rem);
+            line-height: 1.02;
+            font-weight: 600;
+        }
+
+        .hero p {
+            margin: 0;
+            max-width: 720px;
+            font-size: 1.05rem;
+            color: var(--muted);
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: 320px 1fr;
+            gap: 20px;
+            align-items: start;
+        }
+
+        .panel {
+            background: var(--panel);
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            padding: 20px;
+            box-shadow: 0 18px 36px rgba(0, 0, 0, 0.24);
+        }
+
+        .panel h2 {
+            margin: 0 0 14px;
+            font-size: 1.1rem;
+        }
+
+        .stack {
+            display: grid;
+            gap: 14px;
+        }
+
+        label {
+            display: grid;
+            gap: 8px;
+            font-size: 0.95rem;
+        }
+
+        input,
+        textarea {
+            width: 100%;
+            border: 1px solid var(--border);
+            border-radius: 3px;
+            padding: 12px 14px;
+            font: inherit;
+            background: var(--panel-strong);
+            color: var(--text);
+        }
+
+        textarea {
+            min-height: 120px;
+            resize: vertical;
+        }
+
+        button {
+            border: 0;
+            border-radius: 999px;
+            padding: 12px 18px;
+            font: inherit;
+            font-weight: 600;
+            color: white;
+            background: linear-gradient(135deg, #2f72ee 0%, var(--accent) 42%, var(--accent-dark) 100%);
+            cursor: pointer;
+            transition: transform 150ms ease, box-shadow 150ms ease;
+            box-shadow: 0 14px 30px rgba(16, 57, 140, 0.34);
+        }
+
+        button:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 18px 34px rgba(16, 57, 140, 0.42);
+        }
+
+        button:disabled {
+            opacity: 0.6;
+            cursor: wait;
+            transform: none;
+        }
+
+        .secondary {
+            background: linear-gradient(180deg, rgba(245, 249, 255, 0.98), rgba(231, 239, 250, 0.96));
+            color: #1a2c4f;
+            border: 1px solid rgba(79, 153, 255, 0.24);
+            box-shadow: 0 10px 20px rgba(17, 54, 126, 0.1);
+        }
+
+        .row {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .status {
+            min-height: 24px;
+            margin: 0;
+            color: var(--muted);
+        }
+
+        .result-card {
+            display: grid;
+            gap: 16px;
+        }
+
+        .answer {
+            padding: 18px;
+            border-radius: 4px;
+            background: linear-gradient(180deg, rgba(47, 125, 246, 0.14), rgba(47, 125, 246, 0.04));
+            border: 1px solid rgba(79, 153, 255, 0.22);
+            white-space: pre-wrap;
+        }
+
+        .matches {
+            display: grid;
+            gap: 12px;
+        }
+
+        .match {
+            padding: 16px;
+            border-radius: 4px;
+            border: 1px solid var(--border);
+            background: var(--panel-strong);
+        }
+
+        .meta {
+            margin-top: 10px;
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .pill {
+            padding: 4px 10px;
+            border-radius: 2px;
+            background: rgba(79, 153, 255, 0.12);
+            font-size: 0.82rem;
+            color: var(--muted);
+        }
+
+        .empty {
+            color: var(--muted);
+            border: 1px dashed var(--border);
+            border-radius: 4px;
+            padding: 28px;
+            text-align: center;
+            background: rgba(255, 255, 255, 0.45);
+        }
+
+        @media (max-width: 840px) {
+            .grid {
+                grid-template-columns: 1fr;
+            }
+
+            .shell {
+                width: min(100% - 20px, 1100px);
+                margin: 10px auto;
+                padding: 16px;
+                border-radius: 4px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <main class="shell">
+        <section class="hero">
+            <p class="eyebrow">RAG: IoT Database -> ChromaDB + GeminiLLM</p>
+            <h1>IoT Device Status Agent</h1>
+            <p>Sign in to ask questions about your devices, and inspect the retrieved context that powered the answer.</p>
+        </section>
+
+        <section class="grid">
+            <aside class="panel stack">
+                <div>
+                    <h2>Sign In</h2>
+                    <p class="status" id="auth-status">Not signed in yet.</p>
+                </div>
+
+                <label>
+                    Username
+                    <input id="username" type="text" placeholder="shyamala">
+                </label>
+
+                <label>
+                    Password
+                    <input id="password" type="password" placeholder="Enter password">
+                </label>
+
+                <div class="row">
+                    <button id="login-button" type="button">Sign in</button>
+                    <button id="logout-button" type="button" class="secondary">Clear</button>
+                </div>
+
+                <label>
+                    Question
+                    <textarea id="question" placeholder="Which of my devices are offline?"></textarea>
+                </label>
+
+                <label>
+                    Match Limit
+                    <input id="limit" type="number" min="1" max="10" value="3">
+                </label>
+
+                <button id="ask-button" type="button">Ask Agent</button>
+            </aside>
+
+            <section class="panel result-card">
+                <div>
+                    <h2>Answer</h2>
+                    <div id="answer" class="empty">Your answer will appear here once a query succeeds.</div>
+                </div>
+
+                <div>
+                    <h2>Retrieved Matches</h2>
+                    <div id="matches" class="empty">Relevant device documents will appear here.</div>
+                </div>
+            </section>
+        </section>
+    </main>
+
+    <script>
+        const tokenKey = "rag_playground_access_token";
+        const authStatus = document.getElementById("auth-status");
+        const usernameInput = document.getElementById("username");
+        const passwordInput = document.getElementById("password");
+        const questionInput = document.getElementById("question");
+        const limitInput = document.getElementById("limit");
+        const loginButton = document.getElementById("login-button");
+        const logoutButton = document.getElementById("logout-button");
+        const askButton = document.getElementById("ask-button");
+        const answerNode = document.getElementById("answer");
+        const matchesNode = document.getElementById("matches");
+
+        function getToken() {
+            return window.localStorage.getItem(tokenKey);
+        }
+
+        function setToken(token) {
+            window.localStorage.setItem(tokenKey, token);
+            renderStatus();
+        }
+
+        function clearToken() {
+            window.localStorage.removeItem(tokenKey);
+            renderStatus();
+        }
+
+        function renderStatus(message) {
+            const token = getToken();
+            authStatus.textContent = message || (token ? "Signed in. You can query RAG now." : "Not signed in yet.");
+        }
+
+        function setBusy(isBusy) {
+            loginButton.disabled = isBusy;
+            askButton.disabled = isBusy;
+        }
+
+        function renderAnswer(text) {
+            answerNode.className = "answer";
+            answerNode.textContent = text || "No answer text returned.";
+        }
+
+        function renderMatches(matches) {
+            if (!matches || matches.length === 0) {
+                matchesNode.className = "empty";
+                matchesNode.textContent = "No retrieved matches were returned.";
+                return;
+            }
+
+            matchesNode.className = "matches";
+            matchesNode.innerHTML = matches.map((match) => {
+                const metadata = match.metadata || {};
+                const pills = Object.entries(metadata).map(([key, value]) =>
+                    `<span class="pill">${key}: ${value}</span>`
+                ).join("");
+
+                return `
+                    <article class="match">
+                        <div>${(match.document || "").replace(/\n/g, "<br>")}</div>
+                        <div class="meta">${pills}</div>
+                    </article>
+                `;
+            }).join("");
+        }
+
+        async function login() {
+            const username = usernameInput.value.trim();
+            const password = passwordInput.value;
+
+            if (!username || !password) {
+                renderStatus("Enter both username and password.");
+                return;
+            }
+
+            setBusy(true);
+            renderStatus("Requesting JWT token...");
+
+            try {
+                const response = await fetch("/api/token/", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ username, password }),
+                });
+                const data = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(data.detail || data.non_field_errors?.[0] || "Login failed.");
+                }
+
+                setToken(data.access);
+                renderStatus(`Signed in as ${username}.`);
+            } catch (error) {
+                clearToken();
+                renderStatus(error.message);
+            } finally {
+                setBusy(false);
+            }
+        }
+
+        async function askQuestion() {
+            const token = getToken();
+            const question = questionInput.value.trim();
+            const limit = Number(limitInput.value || 3);
+
+            if (!token) {
+                renderStatus("Get a token first.");
+                return;
+            }
+
+            if (!question) {
+                renderStatus("Enter a question before querying.");
+                return;
+            }
+
+            setBusy(true);
+            renderStatus("Querying RAG service...");
+
+            try {
+                const response = await fetch("/devices/rag/query/", {
+                    method: "POST",
+                    headers: {
+                        "Authorization": `Bearer ${token}`,
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify({ question, limit }),
+                });
+                const data = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(data.detail || data.error || "RAG query failed.");
+                }
+
+                renderAnswer(data.answer);
+                renderMatches(data.matches);
+                renderStatus("Query complete.");
+            } catch (error) {
+                renderAnswer(error.message);
+                renderMatches([]);
+                renderStatus(error.message);
+            } finally {
+                setBusy(false);
+            }
+        }
+
+        loginButton.addEventListener("click", login);
+        logoutButton.addEventListener("click", () => {
+            clearToken();
+            renderAnswer("Token cleared. Sign in again to query.");
+            renderMatches([]);
+        });
+        askButton.addEventListener("click", askQuestion);
+        renderStatus();
+    </script>
+</body>
+</html>
