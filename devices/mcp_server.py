@@ -1,6 +1,8 @@
 from __future__ import annotations
 
+import asyncio
 import os
+from functools import partial
 from typing import Any
 
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "iot_project.settings")
@@ -166,6 +168,12 @@ def rebuild_all_device_indexes_tool() -> dict[str, Any]:
     }
 
 
+async def _run_in_thread(func, *args, **kwargs):
+    """Run a synchronous function in a thread pool to avoid blocking the async event loop."""
+    loop = asyncio.get_event_loop()
+    return await loop.run_in_executor(None, partial(func, *args, **kwargs))
+
+
 def create_mcp_server():
     setup_django()
 
@@ -177,23 +185,26 @@ def create_mcp_server():
     server = FastMCP("iot-project")
 
     @server.tool()
-    def list_devices(
+    async def list_devices(
         owner_id: int | None = None,
         username: str | None = None,
         status: str | None = None,
     ) -> dict[str, Any]:
         """List devices for a single owner, optionally filtered by status."""
-        return list_devices_tool(owner_id=owner_id, username=username, status=status)
+        return await _run_in_thread(
+            list_devices_tool, owner_id=owner_id, username=username, status=status
+        )
 
     @server.tool()
-    def get_device(
+    async def get_device(
         device_id: int | None = None,
         serial_number: str | None = None,
         owner_id: int | None = None,
         username: str | None = None,
     ) -> dict[str, Any]:
         """Fetch one device for a single owner by id or serial number."""
-        return get_device_tool(
+        return await _run_in_thread(
+            get_device_tool,
             device_id=device_id,
             serial_number=serial_number,
             owner_id=owner_id,
@@ -201,14 +212,15 @@ def create_mcp_server():
         )
 
     @server.tool()
-    def ask_devices_rag(
+    async def ask_devices_rag(
         question: str,
         owner_id: int | None = None,
         username: str | None = None,
         limit: int = 3,
     ) -> dict[str, Any]:
         """Answer a device question using the existing RAG pipeline."""
-        return ask_devices_rag_tool(
+        return await _run_in_thread(
+            ask_devices_rag_tool,
             question,
             owner_id=owner_id,
             username=username,
@@ -216,17 +228,19 @@ def create_mcp_server():
         )
 
     @server.tool()
-    def rebuild_device_index(
+    async def rebuild_device_index(
         owner_id: int | None = None,
         username: str | None = None,
     ) -> dict[str, Any]:
         """Reindex devices for one owner into Chroma."""
-        return rebuild_device_index_tool(owner_id=owner_id, username=username)
+        return await _run_in_thread(
+            rebuild_device_index_tool, owner_id=owner_id, username=username
+        )
 
     @server.tool()
-    def rebuild_all_device_indexes() -> dict[str, Any]:
+    async def rebuild_all_device_indexes() -> dict[str, Any]:
         """Reindex every device in the project into Chroma."""
-        return rebuild_all_device_indexes_tool()
+        return await _run_in_thread(rebuild_all_device_indexes_tool)
 
     return server
 

@@ -1,0 +1,12 @@
+{
+  "servers": {
+    "iotProject": {
+      "type": "stdio",
+      "command": "${workspaceFolder}/.venv/bin/python",
+      "args": [
+        "-m",
+        "devices.mcp_server"
+      ]
+    }
+  }
+}
