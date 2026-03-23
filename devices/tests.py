@@ -6,6 +6,7 @@ from rest_framework.test import APIClient
 
 from .models import Device
 from .rag import DeviceRAGService
+from .mcp_server import get_device_tool, list_devices_tool
 
 
 class DeviceRAGServiceTests(TestCase):
@@ -67,3 +68,35 @@ class DeviceRAGPlaygroundTests(TestCase):
 
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "IoT Device RAG Playground")
+
+
+class DeviceMCPToolTests(TestCase):
+    def setUp(self):
+        self.user = User.objects.create_user(username="carol", password="secret")
+        self.device = Device.objects.create(
+            name="Sensor Hub",
+            serial_number="MCP-001",
+            status="offline",
+            owner=self.user,
+        )
+
+    def test_list_devices_tool_filters_by_owner_and_status(self):
+        other_user = User.objects.create_user(username="dave", password="secret")
+        Device.objects.create(
+            name="Leak Detector",
+            serial_number="MCP-002",
+            status="active",
+            owner=other_user,
+        )
+
+        result = list_devices_tool(username="carol", status="offline")
+
+        self.assertEqual(result["count"], 1)
+        self.assertEqual(result["owner"]["username"], "carol")
+        self.assertEqual(result["devices"][0]["serial_number"], "MCP-001")
+
+    def test_get_device_tool_returns_requested_device(self):
+        result = get_device_tool(username="carol", serial_number="MCP-001")
+
+        self.assertEqual(result["name"], "Sensor Hub")
+        self.assertEqual(result["status"], "offline")

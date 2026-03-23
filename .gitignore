@@ -13,3 +13,6 @@ __pycache__/
 .chroma/
 __pycache__/
 *.pyc
+.continue/
+.mcp-venv/
+.mcp.json

@@ -3,3 +3,4 @@ djangorestframework>=3.15
 djangorestframework-simplejwt>=5.3
 chromadb>=1.0
 google-genai>=1.0
+mcp>=1.6

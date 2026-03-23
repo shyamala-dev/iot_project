@@ -117,6 +117,48 @@ CHROMA_COLLECTION_NAME=device-knowledge
 CHROMA_PERSIST_DIR=.chroma
 ```
 
+## MCP PoC
+
+This project also includes a small MCP server that exposes device data and the existing RAG flow as tools.
+
+Install dependencies, then run:
+
+```bash
+python -m devices.mcp_server
+```
+
+The MCP server is designed as a sidecar process for any MCP-capable client. Keep client configuration local to your own machine rather than committing editor-specific config into this repo.
+
+Run it as a stdio server from the project root:
+
+```bash
+python -m devices.mcp_server
+```
+
+Then point your client at that command. Example generic server command:
+
+```text
+python -m devices.mcp_server
+```
+
+The server exposes these tools:
+
+- `list_devices`
+- `get_device`
+- `ask_devices_rag`
+- `rebuild_device_index`
+- `rebuild_all_device_indexes`
+
+Example tool inputs:
+
+```json
+{"username":"your-user","status":"offline"}
+```
+
+```json
+{"username":"your-user","question":"Which of my devices are offline?","limit":3}
+```
+
 ## Secret Handling
 
 - Do not commit real API keys or secrets.
