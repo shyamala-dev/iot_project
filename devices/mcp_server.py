@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import asyncio
 import os
+import sys
 from functools import partial
 from typing import Any
 
@@ -247,6 +248,12 @@ def create_mcp_server():
 
 def main() -> None:
     server = create_mcp_server()
+    if sys.stdin.isatty() and sys.stderr.isatty():
+        print(
+            "Starting MCP server on stdio. Waiting for an MCP client to connect; "
+            "this command stays quiet while it runs. Press Ctrl-C to stop it.",
+            file=sys.stderr,
+        )
     server.run()
 
 
